@@ -8,7 +8,7 @@
   },
   "license": "ISC",
   "dependencies": {
-    "@jupiterone/jupiterone-client-nodejs": "^0.13.5",
+    "@jupiterone/jupiterone-client-nodejs": "^0.21.1",
     "aws-sdk": "^2.518.0",
     "chalk": "^2.4.2",
     "p-map": "^3.0.0",
