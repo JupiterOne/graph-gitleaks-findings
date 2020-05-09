@@ -1,19 +1,11 @@
-const highSeverityTags = ['Facebook', 'RSA', 'EC', 'Google', 'Twitter', 'NPM'];
-const lowSeverityFilePathFragments = ['test', 'fixture', 'snapshot'];
+const highSeverityTags = ['Facebook', 'RSA', 'EC', 'Google', 'Twitter', 'NPM', 'AWS'];
+/**
+ * Add additional ignore certain file paths as needed. For example:
+ * const lowSeverityFilePathFragments = ['test', 'fixture', 'snapshot'];
+ */
+const lowSeverityFilePathFragments = ['node_modules', '.lock'];
 
 function toFindingEntity(gitleaksJson, provider, org) {
-  let repoName = gitleaksJson.repo;
-  if (gitleaksJson.repo.indexOf('.git') > -1) {
-    repoName = gitleaksJson.repo.slice(0, -4); // remove .git suffix, if present
-  }
-
-  const newEntity = {
-    entityKey: `gitleaks-finding-${repoName}-${gitleaksJson.commit}`,
-    entityType: 'gitleaks_finding',
-    entityClass: 'Finding',
-    properties: gitleaksJson
-  };
-
   const ignorable = lowSeverityFilePathFragments.some(fragment => {
     if (gitleaksJson.file.toLowerCase().indexOf(fragment) > -1) {
       return true;
@@ -24,7 +16,10 @@ function toFindingEntity(gitleaksJson, provider, org) {
     return undefined;
   }
 
-  newEntity.properties.severity = 'medium';
+  let repoName = gitleaksJson.repo;
+  if (gitleaksJson.repo.indexOf('.git') > -1) {
+    repoName = gitleaksJson.repo.slice(0, -4); // remove .git suffix, if present
+  }
 
   const highSeverity = highSeverityTags.some(sevTag => {
     if (gitleaksJson.tags.indexOf(sevTag) > -1) {
@@ -32,16 +27,22 @@ function toFindingEntity(gitleaksJson, provider, org) {
     }
   });
 
-  if (highSeverity) {
-    newEntity.properties.severity = 'high';
-  }
-
-  newEntity.properties.name = `${repoName}-${gitleaksJson.rule}`;
-  newEntity.properties.displayName = `${repoName}-${gitleaksJson.rule}`;
-  newEntity.properties.targets = `${org}/${repoName}`;
-  newEntity.properties.repoName = repoName;
-  newEntity.properties.repoOwner = org;
-  newEntity.properties.repoType = `${provider.toLowerCase()}_repo`;
+  const newEntity = {
+    entityKey: `gitleaks-finding-${repoName}-${gitleaksJson.commit}`,
+    entityType: 'gitleaks_finding',
+    entityClass: 'Finding',
+    properties: {
+      ...gitleaksJson,
+      name:`${repoName}-${gitleaksJson.rule}`,
+      displayName: `${repoName}-${gitleaksJson.rule}`,
+      targets: `${org}/${repoName}`,
+      repoName: repoName,
+      repoOwner: org,
+      repoType: `${provider.toLowerCase()}_repo`,
+      open: true,
+      severity: highSeverity ? 'high' : 'info',
+    },
+  };
 
   if (provider === 'github') {
     newEntity.properties.webLink =
