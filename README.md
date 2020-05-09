@@ -31,6 +31,14 @@ With this file in place, run:
 
 `docker run --rm --env-file ./.env gitleaks-ingest`
 
+## Assumptions and Limitations
+
+The current version only supports running Gitleaks scan on
+
+- public Github repos
+- private Bitbucket repos
+- repos that are part of an organization
+
 ## Optional Environment Vars
 
 You may optionally specify the following in your `.env`:
