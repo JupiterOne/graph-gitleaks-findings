@@ -59,7 +59,7 @@ async function scanBitbucketRepos(config, j1Client, bitbucketOrg) {
   }
 }
 
-async function createBitbucketClient (config) {
+async function createBitbucketClient(config) {
   const bitbucketAccessToken = await BitbucketClient.getAccessToken(
     config.bitbucketKey,
     config.bitbucketSecret);
@@ -69,12 +69,12 @@ async function createBitbucketClient (config) {
   });
 }
 
-async function bbSSHCloneUrls (bbClient, bbOrg) {
+async function bbSSHCloneUrls(bbClient, bbOrg) {
   const repos = await bbClient.getRepos(bbOrg);
   return repos.map(r => r.links.clone.filter(l => l.name === 'ssh').pop().href);
 }
 
-function writeDecodedSSHKeyFile (filename, b64Data) {
+function writeDecodedSSHKeyFile(filename, b64Data) {
   const buffer = Buffer.from(b64Data, 'base64');
   fs.writeFileSync(filename, buffer.toString('ascii'));
 }
@@ -86,6 +86,7 @@ async function scanGitHubRepos(config, j1Client, githubOrg) {
 
   const args = [
     '--config=' + config.gitleaksConfig,
+    '--host=github',
     '--org=' + githubOrg,
     '--report=' + reportFile,
     '--redact',

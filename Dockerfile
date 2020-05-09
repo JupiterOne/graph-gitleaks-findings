@@ -1,4 +1,4 @@
-FROM node:8
+FROM node:12
 
 # Create project directory
 RUN mkdir -p /opt/graph-gitleaks-findings
