@@ -4,7 +4,7 @@ const fs = require('fs');
 const JupiterOneClient = require('@jupiterone/jupiterone-client-nodejs');
 const { createEntities, toFindingEntities } = require('./util/j1Helpers');
 
-async function gatherConfig () {
+function gatherConfig() {
   const config = {
     bitbucketKey: process.env.BITBUCKET_OAUTH_KEY,
     bitbucketSecret: process.env.BITBUCKET_OAUTH_SECRET,
@@ -14,12 +14,12 @@ async function gatherConfig () {
     sshKeyFilePath: process.env.SSH_KEY_FILE_PATH || '/tmp/id_rsa',
     j1AccessToken: process.env.J1_ACCESS_TOKEN,
     j1Account: process.env.J1_ACCOUNT,
-    gitleaksConfig: process.env.GITLEAKS_CONFIG || '/opt/jupiter-gitleaks-powerup/gitleaks.config',
+    gitleaksConfig: process.env.GITLEAKS_CONFIG || '/opt/graph-gitleaks-findings/gitleaks.config',
     gitleaksBinPath: process.env.GITLEAKS_BIN_PATH || '/usr/bin/gitleaks',
     githubOrgs: (process.env.GITHUB_ORGS_CSV || '').split(',').map(i => i.trim()).filter(i => i.length)
   };
 
-  const requiredVars = ['bitbucketKey', 'bitbucketSecret', 'bitbucketSshKeyB64', 'j1AccessToken', 'j1Account'];
+  const requiredVars = ['j1AccessToken', 'j1Account'];
   if (requiredVars.some(v => { return !config[v]; })) {
     throw new Error('missing one or more required environment variables: ' + requiredVars);
   }
@@ -55,7 +55,7 @@ async function scanBitbucketRepos(config, j1Client, bitbucketOrg) {
       '--report=' + reportFile
     ];
 
-    await scan(args, 'bitbucket', j1Client, reportFile);
+    await scan(config, args, 'bitbucket', j1Client, reportFile, bitbucketOrg);
   }
 }
 
@@ -86,13 +86,13 @@ async function scanGitHubRepos(config, j1Client, githubOrg) {
 
   const args = [
     '--config=' + config.gitleaksConfig,
-    '--github-org=' + githubOrg,
+    '--org=' + githubOrg,
     '--report=' + reportFile,
     '--redact',
     '--exclude-forks'
   ];
 
-  await scan(args, 'github', j1Client, reportFile);
+  await scan(config, args, 'github', j1Client, reportFile, githubOrg);
 
   console.log('end of scan for github org: ' + githubOrg);
 }
@@ -104,7 +104,7 @@ async function scanGitHubRepos(config, j1Client, githubOrg) {
  * @param {JupiterOneClient} j1Client
  * @param {string} reportFile path to the gitleaks scan report
  */
-async function scan(args, provider, j1Client, reportFile) {
+async function scan(config, args, provider, j1Client, reportFile, org) {
   try {
     await spawn(
       config.gitleaksBinPath,
@@ -116,8 +116,8 @@ async function scan(args, provider, j1Client, reportFile) {
 
   if (fs.existsSync(reportFile)) {
     const leaks = JSON.parse(fs.readFileSync(reportFile));
-    const entities = await toFindingEntities(leaks, provider, bitbucketOrg);
-    console.log(`Ingesting ${entities.length} non-ignored gitleaks findings for ${repoName}`);
+    const entities = await toFindingEntities(leaks, provider, org);
+    console.log(`Ingesting ${entities.length} non-ignored gitleaks findings for ${org}`);
     await createEntities(j1Client, entities);
     fs.unlinkSync(reportFile);
   }
@@ -127,15 +127,15 @@ async function run() {
   console.log('Start of gitleaks scan');
 
   const config = await gatherConfig();
-  const j1Client = 
+  const j1Client =
     await new JupiterOneClient(
       { account: config.j1Account, accessToken: config.j1AccessToken }
     ).init();
 
-  for (const org of config.githubOrgs) {
+  for (const org of config.githubOrgs || []) {
     await scanGitHubRepos(config, j1Client, org);
   }
-  for (const org of config.bitbucketOrgs) {
+  for (const org of config.bitbucketOrgs || []) {
     await scanBitbucketRepos(config, j1Client, org);
   }
 
