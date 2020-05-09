@@ -44,7 +44,7 @@ The current version only supports running Gitleaks scan on
 You may optionally specify the following in your `.env`:
 
 ```bash
-BITBUCKET_REPOS_TO_SKIP_CSV='comma,separated,repo-names'
+BITBUCKET_REPOS_TO_SKIP_CSV=comma,separated,repo-names
 ```
 
 ## Query JupiterOne Findings
