@@ -9,16 +9,14 @@ Execute: `docker build . -t gitleaks-ingest`
 
 ## Running the Docker container
 
-Create a file with the following values:
-
-`gitleaks.env`
+Create a `.env` file with the following values:
 
 ```bash
 BITBUCKET_OAUTH_KEY=<your secret here>
 BITBUCKET_OAUTH_SECRET=<your secret here>
 BITBUCKET_SSH_PRIVATE_KEY=<your secret here>
-BITBUCKET_ORGS_CSV="comma,separated,org-names"
-GITHUB_ORGS_CSV="comma,separated,org-names"
+BITBUCKET_ORGS_CSV=comma,separated,org-names
+GITHUB_ORGS_CSV=comma,separated,org-names
 J1_ACCESS_TOKEN=<your secret here>
 J1_ACCOUNT=<your J1 account name here>
 ```
@@ -31,14 +29,22 @@ require a passphrase (Gitleaks does not support SSH keys requiring passphrases).
 
 With this file in place, run:
 
-`docker run --rm --env-file ./gitleaks.env gitleaks-ingest`
+`docker run --rm --env-file ./.env gitleaks-ingest`
+
+## Assumptions and Limitations
+
+The current version only supports running Gitleaks scan on
+
+- public Github repos
+- private Bitbucket repos
+- repos that are part of an organization
 
 ## Optional Environment Vars
 
-You may optionally specify the following in your `gitleaks.env`:
+You may optionally specify the following in your `.env`:
 
 ```bash
-BITBUCKET_REPOS_TO_SKIP_CSV='comma,separated,repo-names'
+BITBUCKET_REPOS_TO_SKIP_CSV=comma,separated,repo-names
 ```
 
 ## Query JupiterOne Findings

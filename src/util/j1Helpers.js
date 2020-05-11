@@ -1,19 +1,11 @@
-const highSeverityTags = ['Facebook', 'RSA', 'EC', 'Google', 'Twitter', 'NPM'];
-const lowSeverityFilePathFragments = ['test', 'fixture', 'snapshot'];
+const highSeverityTags = ['Facebook', 'RSA', 'EC', 'Google', 'Twitter', 'NPM', 'AWS'];
+/**
+ * Add additional ignore certain file paths as needed. For example:
+ * const lowSeverityFilePathFragments = ['test', 'fixture', 'snapshot'];
+ */
+const lowSeverityFilePathFragments = ['node_modules', '.lock'];
 
-async function toFindingEntity(gitleaksJson, source, org) {
-  let repoName = gitleaksJson.repo;
-  if (gitleaksJson.repo.indexOf('.git') > -1) {
-    repoName = gitleaksJson.repo.slice(0, -4); // remove .git suffix, if present
-  }
-
-  const newEntity = {
-    entityKey: `gitleaks-finding-${repoName}-${gitleaksJson.commit}`,
-    entityType: 'gitleaks_finding',
-    entityClass: 'Finding',
-    properties: gitleaksJson
-  };
-
+function toFindingEntity(gitleaksJson, provider, org) {
   const ignorable = lowSeverityFilePathFragments.some(fragment => {
     if (gitleaksJson.file.toLowerCase().indexOf(fragment) > -1) {
       return true;
@@ -24,7 +16,10 @@ async function toFindingEntity(gitleaksJson, source, org) {
     return undefined;
   }
 
-  newEntity.properties.severity = 'medium';
+  let repoName = gitleaksJson.repo;
+  if (gitleaksJson.repo.indexOf('.git') > -1) {
+    repoName = gitleaksJson.repo.slice(0, -4); // remove .git suffix, if present
+  }
 
   const highSeverity = highSeverityTags.some(sevTag => {
     if (gitleaksJson.tags.indexOf(sevTag) > -1) {
@@ -32,40 +27,38 @@ async function toFindingEntity(gitleaksJson, source, org) {
     }
   });
 
-  if (highSeverity) {
-    newEntity.properties.severity = 'high';
-  }
+  const newEntity = {
+    entityKey: `gitleaks-finding-${repoName}-${gitleaksJson.commit}`,
+    entityType: 'gitleaks_finding',
+    entityClass: 'Finding',
+    properties: {
+      ...gitleaksJson,
+      name:`${repoName}-${gitleaksJson.rule}`,
+      displayName: `${repoName}-${gitleaksJson.rule}`,
+      targets: `${org}/${repoName}`,
+      repoName: repoName,
+      repoOwner: org,
+      repoType: `${provider.toLowerCase()}_repo`,
+      open: true,
+      severity: highSeverity ? 'high' : 'info',
+    },
+  };
 
-  newEntity.properties.name = `${repoName}-${gitleaksJson.rule}`;
-  newEntity.properties.displayName = `${repoName}-${gitleaksJson.rule}`;
-  newEntity.properties.repo = repoName;
-  newEntity.properties.targets = repoName;
-
-  if (source === 'github') {
-    newEntity.properties.coderepo_type = 'github_repo';
-    newEntity.properties.webLink = 'https://github.com/' +
-      org + '/' +
-      repoName +
-      '/tree/' +
-      gitleaksJson.commit + '/' +
-      gitleaksJson.file;
-  } else if (source === 'bitbucket') {
-    newEntity.properties.coderepo_type = 'bitbucket_repo';
-    newEntity.properties.webLink = 'https://bitbucket.org/' +
-      org + '/' +
-      repoName +
-      '/src/' +
-      gitleaksJson.commit + '/' +
-      gitleaksJson.file;
+  if (provider === 'github') {
+    newEntity.properties.webLink =
+      `https://github.com/${org}/${repoName}/tree/${gitleaksJson.commit}/${gitleaksJson.file}`;
+  } else if (provider === 'bitbucket') {
+    newEntity.properties.webLink =
+      `https://bitbucket.org/${org}/${reporName}/src/${gitleaksJson.commit}/${gitleaksJson.file}`;
   }
 
   return newEntity;
 }
 
-async function toFindingEntities(gitleaks, source, org) {
+function toFindingEntities(gitleaks, source, org) {
   const entities = [];
   for (const obj of gitleaks) {
-    const entity = await toFindingEntity(obj, source, org);
+    const entity = toFindingEntity(obj, source, org);
     if (entity) {
       entities.push(entity);
     }
