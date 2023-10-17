@@ -2,11 +2,15 @@
   "name": "jupiter-gitleaks-powerup",
   "version": "1.0.0",
   "description": "Ingest gitleaks findings for bitbucket and github organizations",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JupiterOne/graph-gitleaks-findings"
+  },
+  "license": "ISC",
   "main": "index.js",
   "scripts": {
     "lint": "eslint ."
   },
-  "license": "ISC",
   "dependencies": {
     "@jupiterone/jupiterone-client-nodejs": "^0.21.1",
     "chalk": "^2.4.2",

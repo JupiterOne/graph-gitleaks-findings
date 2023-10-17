@@ -1,0 +1,12 @@
+openapi: 3.0.1
+info:
+  title: jupiter-gitleaks-powerup
+  description: Ingest gitleaks findings for bitbucket and github organizations
+  x-cortex-git:
+    github:
+      repository: JupiterOne/graph-gitleaks-findings
+  x-cortex-owners:
+    - type: group
+      name: JupiterOne/integrations
+  x-cortex-service-groups: tier-4
+  x-cortex-tag: jupiter-gitleaks-powerup
